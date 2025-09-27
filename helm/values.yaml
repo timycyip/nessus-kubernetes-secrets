@@ -18,10 +18,18 @@ resources: {}
 # Must include keys: activation_code, username, password
 secretName: nessus-credentials
 
+# Traefik configuration (optional, only needed if using Traefik ingress controller)
+traefik:
+  serversTransport:
+    create: false  # set to true to create a ServersTransport for upstream HTTPS
+    name: nessus-transport
+    insecureSkipVerify: false  # set to true to skip upstream cert verification (not recommended for prod)
+    serverName: ""  # optional: set to CN/SAN in Nessus cert if needed
+
 # Ingress configuration
 ingress:
   enabled: false
-  className: ""        # e.g., "traefik" or "nginx"
+  className: ""        # e.g., "traefik", "nginx", or leave empty for default
   annotations: {}      # controller-specific annotations
   hosts:
     - host: nessus.example.com
@@ -29,8 +37,39 @@ ingress:
         - path: /
           pathType: Prefix
   tls: []
-  # Example:
+  # Example for NGINX Ingress:
+  # enabled: true
+  # className: "nginx"
+  # annotations:
+  #   nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  #   nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  # hosts:
+  #   - host: nessus.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
   # tls:
   #   - secretName: nessus-tls
   #     hosts:
   #       - nessus.example.com
+  #
+  # Example for Traefik Ingress (with upstream cert skip):
+  # enabled: true
+  # className: "traefik"
+  # annotations:
+  #   traefik.ingress.kubernetes.io/service.serversscheme: https
+  #   traefik.ingress.kubernetes.io/service.serverstransport: "{{ .Release.Namespace }}/nessus-transport"
+  # hosts:
+  #   - host: nessus.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  # tls:
+  #   - secretName: nessus-tls
+  #     hosts:
+  #       - nessus.example.com
+  # traefik:
+  #   serversTransport:
+  #     create: true
+  #     name: nessus-transport
+  #     insecureSkipVerify: true

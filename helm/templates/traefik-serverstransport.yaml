@@ -1,0 +1,12 @@
+{{- if and .Values.ingress.enabled .Values.traefik.serversTransport.create (.Capabilities.APIVersions.Has "traefik.io/v1alpha1") }}
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: {{ .Values.traefik.serversTransport.name | default (printf "%s-transport" (include "nessus-secrets.fullname" .)) }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  insecureSkipVerify: {{ .Values.traefik.serversTransport.insecureSkipVerify | default true }}
+  {{- with .Values.traefik.serversTransport.serverName }}
+  serverName: {{ . | quote }}
+  {{- end }}
+{{- end }}
