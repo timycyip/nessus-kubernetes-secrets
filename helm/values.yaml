@@ -68,8 +68,3 @@ ingress:
   #   - secretName: nessus-tls
   #     hosts:
   #       - nessus.example.com
-  # traefik:
-  #   serversTransport:
-  #     create: true
-  #     name: nessus-transport
-  #     insecureSkipVerify: true
