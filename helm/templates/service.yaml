@@ -10,6 +10,6 @@ spec:
     - port: {{ .Values.service.port }}
       targetPort: 8834
       protocol: TCP
-      name: http
+      name: https
   selector:
     {{- include "nessus-secrets.selectorLabels" . | nindent 4 }}
