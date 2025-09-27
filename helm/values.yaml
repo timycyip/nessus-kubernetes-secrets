@@ -17,3 +17,20 @@ resources: {}
 # Secret containing credentials referenced by the Deployment.
 # Must include keys: activation_code, username, password
 secretName: nessus-credentials
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: ""        # e.g., "traefik" or "nginx"
+  annotations: {}      # controller-specific annotations
+  hosts:
+    - host: nessus.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  # Example:
+  # tls:
+  #   - secretName: nessus-tls
+  #     hosts:
+  #       - nessus.example.com
