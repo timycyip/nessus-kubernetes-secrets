@@ -1,6 +1,6 @@
 service:
-  type: LoadBalancer
-  port: 443
+  type: ClusterIP
+  port: 8834
 
 image:
   tag: latest
@@ -8,13 +8,12 @@ image:
 
 resources: {}
   # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
+  #   cpu: 500m
+  #   memory: 512Mi
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
 
-nessus:
-  activation_code: ""
-  username: ""
-  password: ""
+# Secret containing credentials referenced by the Deployment.
+# Must include keys: activation_code, username, password
+secretName: nessus-credentials

@@ -1,32 +1,40 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nessus.fullname" . }}
-  namespace: nessus
+  name: {{ include "nessus-secrets.fullname" . }}
   labels:
-    {{- include "nessus.labels" . | nindent 4 }}
+    {{- include "nessus-secrets.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "nessus.selectorLabels" . | nindent 6 }}
+      {{- include "nessus-secrets.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nessus.selectorLabels" . | nindent 8 }}
+        {{- include "nessus-secrets.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: "tenableofficial/nessus:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "tenableofficial/nessus:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8834
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:
-          - name: ACTIVATION_CODE
-            value: "{{ .Values.nessus.activation_code }}"
-          - name: USERNAME
-            value: "{{ .Values.nessus.username }}"
-          - name: PASSWORD
-            value: "{{ .Values.nessus.password }}"
+            - name: ACTIVATION_CODE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: activation_code
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: username
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secretName }}
+                  key: password

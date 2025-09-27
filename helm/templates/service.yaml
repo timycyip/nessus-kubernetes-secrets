@@ -1,16 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "nessus.fullname" . }}
-  namespace: nessus
+  name: {{ include "nessus-secrets.fullname" . }}
   labels:
-    {{- include "nessus.labels" . | nindent 4 }}
+    {{- include "nessus-secrets.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: 8834
       protocol: TCP
-      name: https
+      name: http
   selector:
-    {{- include "nessus.selectorLabels" . | nindent 4 }}
+    {{- include "nessus-secrets.selectorLabels" . | nindent 4 }}
