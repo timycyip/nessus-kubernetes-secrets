@@ -3,7 +3,7 @@ service:
   port: 8834
 
 image:
-  tag: latest
+  tag: latest-oracle
   pullPolicy: IfNotPresent
 
 resources: {}
