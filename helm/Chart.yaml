@@ -2,7 +2,7 @@ apiVersion: v2
 name: nessus-secrets
 description: Nessus vulnerability scanner with Secrets and Ingress integration
 type: application
-version: 0.1.2
+version: 0.1.3
 appVersion: "latest"
 keywords:
   - nessus
