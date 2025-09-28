@@ -28,13 +28,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secretName }}
                   key: activation_code
+                  optional: true
             - name: USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.secretName }}
                   key: username
+                  optional: true
             - name: PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.secretName }}
                   key: password
+                  optional: true

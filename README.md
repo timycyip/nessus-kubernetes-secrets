@@ -21,10 +21,12 @@ https://github.com/freddo256/nessus-kubernetes-argocd/tree/main/helm
 
 This chart expects a Kubernetes Secret containing Nessus credentials. The Secret name is configurable via `values.yaml:secretName` (default: `nessus-credentials`).
 
-The Secret must contain the following keys:
-- `activation_code`: Nessus activation code
-- `username`: Nessus admin username
-- `password`: Nessus admin password
+The Secret may contain the following optional keys:
+- `activation_code`: Nessus activation code (optional)
+- `username`: Nessus admin username (optional)
+- `password`: Nessus admin password (optional)
+
+If a key is omitted from the Secret, the corresponding environment variable will not be set in the container. Nessus will use its default behavior (e.g., manual activation through the web interface if activation_code is not provided).
 
 ### Option 1: Using External Secrets (Recommended)
 Apply the ExternalSecret manifest to pull credentials from AWS Parameter Store:
