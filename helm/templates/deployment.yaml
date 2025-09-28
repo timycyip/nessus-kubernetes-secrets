@@ -53,13 +53,38 @@ spec:
                   - /bin/sh
                   - -c
                   - |
-                    KEY="/tls/tls.key"
-                    CRT="/tls/tls.crt"
+                    OUT="/proc/1/fd/1"; ERR="/proc/1/fd/2"
+                    echo "[postStart] Checking for server certificate material..." >"$OUT"
+                    KEY="/tls/tls.key"; CRT="/tls/tls.crt"; CACFG="/tls/ca.crt"
                     if [ -f "$KEY" ] && [ -f "$CRT" ]; then
-                      echo "Importing Nessus server cert..."
-                      /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$CRT" || true
+                      echo "[postStart] tls.key and tls.crt found" >"$OUT"
+                      # Split tls.crt into individual certs (cert1=leaf, cert2+=chain)
+                      awk 'BEGIN{c=0} /-----BEGIN CERTIFICATE-----/{c++} {print > ("/tmp/cert" c ".pem")}' "$CRT" || true
+                      LEAF="/tls/server-leaf.crt"
+                      CHAIN="/tls/ca-chain.crt"
+                      if [ -s /tmp/cert1.pem ]; then
+                        cp /tmp/cert1.pem "$LEAF"
+                      else
+                        cp "$CRT" "$LEAF"
+                      fi
+                      # Build chain from remaining certs, or use ca.crt if provided
+                      if [ -f "$CACFG" ]; then
+                        echo "[postStart] Using provided /tls/ca.crt as CA chain" >"$OUT"
+                        cp "$CACFG" "$CHAIN"
+                      else
+                        : > "$CHAIN"
+                        i=2
+                        while [ -f "/tmp/cert${i}.pem" ]; do
+                          cat "/tmp/cert${i}.pem" >> "$CHAIN"
+                          i=$((i+1))
+                        done
+                        [ ! -s "$CHAIN" ] && cp "$CRT" "$CHAIN"
+                      fi
+                      echo "[postStart] Importing with nessuscli (leaf=$LEAF, chain=$CHAIN)" >"$OUT"
+                      /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$LEAF" --cacert="$CHAIN" >>"$OUT" 2>>"$ERR" || true
+                      echo "[postStart] Import attempted" >"$OUT"
                     else
-                      echo "TLS files not present at $KEY / $CRT, skipping import"
+                      echo "[postStart] TLS files not present; skipping import" >"$OUT"
                     fi
           {{- end }}
       {{- if .Values.serverCert.enabled }}
