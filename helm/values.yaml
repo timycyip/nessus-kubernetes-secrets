@@ -21,9 +21,9 @@ secretName: nessus-credentials
 # Traefik configuration (optional, only needed if using Traefik ingress controller)
 traefik:
   serversTransport:
-    create: false  # set to true to create a ServersTransport for upstream HTTPS
+    create: true  # set to true to create a ServersTransport for upstream HTTPS
     name: nessus-transport
-    insecureSkipVerify: false  # set to true to skip upstream cert verification (not recommended for prod)
+    insecureSkipVerify: true  # set to true to skip upstream cert verification (not recommended for prod)
     serverName: ""  # optional: set to CN/SAN in Nessus cert if needed
 
 # Ingress configuration
@@ -57,6 +57,9 @@ ingress:
   # enabled: true
   # className: "traefik"
   # annotations:
+  #   traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  #   traefik.ingress.kubernetes.io/router.tls: "true"
+  #   traefik.ingress.kubernetes.io/service.port: "8834"
   #   traefik.ingress.kubernetes.io/service.serversscheme: https
   #   traefik.ingress.kubernetes.io/service.serverstransport: "{{ .Release.Namespace }}/nessus-transport"
   # hosts:
@@ -68,8 +71,3 @@ ingress:
   #   - secretName: nessus-tls
   #     hosts:
   #       - nessus.example.com
-  # traefik:
-  #   serversTransport:
-  #     create: true
-  #     name: nessus-transport
-  #     insecureSkipVerify: true
