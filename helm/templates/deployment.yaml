@@ -56,36 +56,40 @@ spec:
                     OUT="/proc/1/fd/1"; ERR="/proc/1/fd/2"
                     echo "[postStart] Checking for server certificate material..." >"$OUT"
                     KEY="/tls/tls.key"; CRT="/tls/tls.crt"; CACFG="/tls/ca.crt"
+                    LEAF="/tmp/server-leaf.crt"; CHAIN="/tmp/ca-chain.crt"
                     if [ -f "$KEY" ] && [ -f "$CRT" ]; then
                       echo "[postStart] tls.key and tls.crt found" >"$OUT"
                       # Split tls.crt into individual certs (cert1=leaf, cert2+=chain)
                       awk 'BEGIN{c=0} /-----BEGIN CERTIFICATE-----/{c++} {print > ("/tmp/cert" c ".pem")}' "$CRT" || true
-                      LEAF="/tls/server-leaf.crt"
-                      CHAIN="/tls/ca-chain.crt"
                       if [ -s /tmp/cert1.pem ]; then
-                        cp /tmp/cert1.pem "$LEAF"
+                        cp /tmp/cert1.pem "$LEAF" || cp "$CRT" "$LEAF"
                       else
-                        cp "$CRT" "$LEAF"
+                        cp "$CRT" "$LEAF" || true
                       fi
                       # Build chain from remaining certs, or use ca.crt if provided
                       if [ -f "$CACFG" ]; then
                         echo "[postStart] Using provided /tls/ca.crt as CA chain" >"$OUT"
-                        cp "$CACFG" "$CHAIN"
+                        cp "$CACFG" "$CHAIN" || true
                       else
                         : > "$CHAIN"
                         i=2
                         while [ -f "/tmp/cert${i}.pem" ]; do
-                          cat "/tmp/cert${i}.pem" >> "$CHAIN"
+                          cat "/tmp/cert${i}.pem" >> "$CHAIN" || true
                           i=$((i+1))
                         done
-                        [ ! -s "$CHAIN" ] && cp "$CRT" "$CHAIN"
+                        [ ! -s "$CHAIN" ] && cp "$CRT" "$CHAIN" || true
                       fi
-                      echo "[postStart] Importing with nessuscli (leaf=$LEAF, chain=$CHAIN)" >"$OUT"
-                      /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$LEAF" --cacert="$CHAIN" >>"$OUT" 2>>"$ERR" || true
-                      echo "[postStart] Import attempted" >"$OUT"
+                      if [ -x /opt/nessus/sbin/nessuscli ]; then
+                        echo "[postStart] Importing with nessuscli (leaf=$LEAF, chain=$CHAIN)" >"$OUT"
+                        /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$LEAF" --cacert="$CHAIN" >>"$OUT" 2>>"$ERR" || true
+                        echo "[postStart] Import attempted" >"$OUT"
+                      else
+                        echo "[postStart] nessuscli not executable yet; skipping import" >"$OUT"
+                      fi
                     else
                       echo "[postStart] TLS files not present; skipping import" >"$OUT"
                     fi
+                    true
           {{- end }}
       {{- if .Values.serverCert.enabled }}
       volumes:
