@@ -1,16 +1,24 @@
-{{- if .Values.ingress.enabled }}
+{{- if and .Values.ingress.enabled (not .Values.traefikTcp.enabled) }}
 {{- $fullName := include "nessus-secrets.fullname" . -}}
 {{- $labels := include "nessus-secrets.labels" . -}}
 {{- $svcPort := .Values.service.port -}}
+{{- $userAnnotations := .Values.ingress.annotations | default dict -}}
+{{- $autoAnnotations := dict -}}
+{{- if and (eq .Values.ingress.className "nginx") .Values.nginx.sslPassthrough }}
+{{- $_ := set $autoAnnotations "nginx.ingress.kubernetes.io/ssl-passthrough" "true" -}}
+{{- $_ := set $autoAnnotations "nginx.ingress.kubernetes.io/backend-protocol" "HTTPS" -}}
+{{- $_ := set $autoAnnotations "nginx.ingress.kubernetes.io/ssl-redirect" "true" -}}
+{{- end }}
+{{- $mergedAnnotations := merge $autoAnnotations $userAnnotations -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
     {{- $labels | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- if $mergedAnnotations }}
   annotations:
-    {{- tpl (toYaml .) $ | nindent 4 }}
+    {{- tpl (toYaml $mergedAnnotations) $ | nindent 4 }}
   {{- end }}
 spec:
   {{- if .Values.ingress.className }}

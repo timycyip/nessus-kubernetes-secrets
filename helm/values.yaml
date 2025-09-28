@@ -29,14 +29,25 @@ traefik:
 # Ingress configuration
 ingress:
   enabled: false
-  className: ""        # e.g., "traefik", "nginx", or leave empty for default
+  className: "nginx"   # default to nginx with TLS passthrough support
   annotations: {}      # controller-specific annotations
   hosts:
     - host: nessus.example.com
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls: []               # leave empty for passthrough (backend presents cert)
+
+# NGINX-specific options
+nginx:
+  sslPassthrough: true  # enable TLS passthrough for NGINX Ingress
+
+# Optional Traefik TCP passthrough (disabled by default)
+traefikTcp:
+  enabled: false
+  entryPoint: websecure
+  hostSNI: nessus.example.com
+  servicePort: 8834
   # Example for NGINX Ingress:
   # enabled: true
   # className: "nginx"
