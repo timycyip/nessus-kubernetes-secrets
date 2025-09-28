@@ -1,6 +1,7 @@
 # nessus-kubernetes-secrets
 ## Wrapper Helm chart of freddo256/nessus-kubernetes-argocd
-This wrapper Helm chart integrates with (External) Secrets to pull credentials from AWS Parameter Store, avoiding hardcoded secrets.
+This wrapper Helm chart integrates with (External) Secrets, avoiding hardcoded secrets.
+Experimental: The chart imports an SSL certificate from secret to the nessus application.
 
 1. (Optionally) Ensure External Secrets Operator is installed and configured with a ClusterSecretStore for AWS Parameter Store.
 2. Apply the ExternalSecret / Secret manifest: `secret-nessus-credentials.yaml` (creates Secret in nessus namespace).
