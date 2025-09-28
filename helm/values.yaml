@@ -18,25 +18,21 @@ resources: {}
 # Must include keys: activation_code, username, password
 secretName: nessus-credentials
 
-# Traefik configuration (optional, only needed if using Traefik ingress controller)
-traefik:
-  serversTransport:
-    create: true  # set to true to create a ServersTransport for upstream HTTPS
-    name: nessus-transport
-    insecureSkipVerify: true  # set to true to skip upstream cert verification (not recommended for prod)
-    serverName: ""  # optional: set to CN/SAN in Nessus cert if needed
+# Note: This chart only supports Traefik TCP passthrough via IngressRouteTCP.
+# Traefik HTTP/HTTPS re-encrypt mode is not supported.
 
 # Ingress configuration
 ingress:
   enabled: false
-  className: ""        # e.g., "traefik", "nginx", or leave empty for default
+  className: "nginx"   # default to nginx with TLS passthrough support
   annotations: {}      # controller-specific annotations
   hosts:
     - host: nessus.example.com
       paths:
         - path: /
           pathType: Prefix
-  tls: []
+  tls: []               # leave empty for passthrough (backend presents cert)
+
   # Example for NGINX Ingress:
   # enabled: true
   # className: "nginx"
@@ -71,3 +67,15 @@ ingress:
   #   - secretName: nessus-tls
   #     hosts:
   #       - nessus.example.com
+
+# NGINX-specific options
+nginx:
+  sslPassthrough: true  # enable TLS passthrough for NGINX Ingress
+
+# Optional Traefik TCP passthrough (disabled by default)
+traefikTcp:
+  enabled: false
+  entryPoint: websecure
+  hostSNI: nessus.example.com
+  servicePort: 8834
+  

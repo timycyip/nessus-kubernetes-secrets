@@ -50,41 +50,62 @@ kubectl apply -f nessus-system/charts/nessus-secrets/examples/secret-nessus-cred
 
 The chart supports optional Ingress creation for external access. Enable via `values.yaml:ingress.enabled`.
 
-Example configuration for Traefik:
+**Important:** This chart only supports end-to-end TLS passthrough modes. Nessus uses self-signed certificates by default, so TLS termination at the ingress controller is not supported. Choose one of the two passthrough options below.
+
+### Option 1: NGINX Ingress with TLS Passthrough
+
+Use NGINX Ingress Controller with SSL passthrough enabled. This allows end-to-end TLS encryption where the backend (Nessus) presents its own certificate.
+
+**Requirements:**
+- NGINX Ingress Controller must be installed with `--enable-ssl-passthrough` flag
+- The backend service (Nessus) must be configured to serve HTTPS on port 8834
+
+Example configuration:
 ```yaml
 ingress:
   enabled: true
-  className: "traefik"
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  className: "nginx"  # default
+  annotations: {}     # additional annotations (auto-injected passthrough annotations)
   hosts:
     - host: nessus.example.com
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: nessus-tls
-      hosts:
-        - nessus.example.com
+  tls: []  # leave empty for passthrough
+
+nginx:
+  sslPassthrough: true  # default
 ```
 
-For NGINX:
+The chart automatically injects the required NGINX annotations:
+- `nginx.ingress.kubernetes.io/ssl-passthrough: "true"`
+- `nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"`
+- `nginx.ingress.kubernetes.io/ssl-redirect: "true"`
+
+### Option 2: Traefik IngressRouteTCP with TLS Passthrough
+
+Use Traefik's TCP routing with TLS passthrough for true end-to-end TLS encryption.
+
+**Requirements:**
+- Traefik must be installed with CRDs enabled (the official Traefik Helm chart installs them)
+- The backend service (Nessus) must be configured to serve HTTPS on port 8834
+
+Example configuration:
 ```yaml
 ingress:
+  enabled: false  # disable standard ingress
+
+traefikTcp:
   enabled: true
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  hosts:
-    - host: nessus.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: nessus-tls
-      hosts:
-        - nessus.example.com
+  entryPoint: websecure
+  hostSNI: nessus.example.com
+  servicePort: 8834
 ```
+
+**Notes:**
+- With TCP passthrough, Traefik does not manage certificates for the host
+- The backend presents its own TLS certificate matching the SNI hostname
+- Do not enable both `ingress.enabled` and `traefikTcp.enabled` for the same host
 
 Note: Service type can remain `ClusterIP` when using Ingress.
 
