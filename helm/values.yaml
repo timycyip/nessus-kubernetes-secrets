@@ -19,12 +19,8 @@ resources: {}
 secretName: nessus-credentials
 
 # Traefik configuration (optional, only needed if using Traefik ingress controller)
-traefik:
-  serversTransport:
-    create: true  # set to true to create a ServersTransport for upstream HTTPS
-    name: nessus-transport
-    insecureSkipVerify: true  # set to true to skip upstream cert verification (not recommended for prod)
-    serverName: ""  # optional: set to CN/SAN in Nessus cert if needed
+# Note: This chart only supports Traefik TCP passthrough via IngressRouteTCP.
+# Traefik HTTP/HTTPS re-encrypt mode is not supported.
 
 # Ingress configuration
 ingress:
