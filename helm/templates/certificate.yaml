@@ -7,6 +7,8 @@ metadata:
     {{- include "nessus-secrets.labels" . | nindent 4 }}
 spec:
   secretName: {{ .Values.serverCert.secretName }}
+  privateKey:
+    rotationPolicy: Always
   {{- if .Values.serverCert.certManager.clusterIssuer }}
   issuerRef:
     name: {{ .Values.serverCert.certManager.clusterIssuer }}
