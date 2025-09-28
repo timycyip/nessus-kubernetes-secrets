@@ -41,3 +41,31 @@ spec:
                   name: {{ .Values.secretName }}
                   key: password
                   optional: true
+          {{- if .Values.serverCert.enabled }}
+          volumeMounts:
+            - name: nessus-server-cert
+              mountPath: "/tls"
+              readOnly: true
+          lifecycle:
+            preStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    KEY="/tls/tls.key"
+                    CRT="/tls/tls.crt"
+                    if [ -f "$KEY" ] && [ -f "$CRT" ]; then
+                      echo "Importing Nessus server cert..."
+                      /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$CRT" || true
+                    else
+                      echo "TLS files not present at $KEY / $CRT, skipping import"
+                    fi
+          {{- end }}
+      {{- if .Values.serverCert.enabled }}
+      volumes:
+        - name: nessus-server-cert
+          secret:
+            secretName: {{ .Values.serverCert.secretName }}
+            optional: true
+      {{- end }}
