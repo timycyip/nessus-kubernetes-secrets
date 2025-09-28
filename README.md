@@ -105,7 +105,6 @@ traefikTcp:
 **Notes:**
 - With TCP passthrough, Traefik does not manage certificates for the host
 - The backend presents its own TLS certificate matching the SNI hostname
-- DNS must be configured separately (see ExternalDNS Integration below)
 - Do not enable both `ingress.enabled` and `traefikTcp.enabled` for the same host
 
 Note: Service type can remain `ClusterIP` when using Ingress.
