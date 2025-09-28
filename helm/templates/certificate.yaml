@@ -1,0 +1,26 @@
+{{- if and .Values.serverCert.enabled .Values.serverCert.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "nessus-secrets.fullname" . }}-{{ .Values.serverCert.secretName | replace "." "-" }}-cert
+  labels:
+    {{- include "nessus-secrets.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.serverCert.secretName }}
+  {{- if .Values.serverCert.certManager.clusterIssuer }}
+  issuerRef:
+    name: {{ .Values.serverCert.certManager.clusterIssuer }}
+    kind: ClusterIssuer
+  {{- else if and .Values.serverCert.certManager.issuerRef.name .Values.serverCert.certManager.issuerRef.kind }}
+  issuerRef:
+    name: {{ .Values.serverCert.certManager.issuerRef.name }}
+    kind: {{ .Values.serverCert.certManager.issuerRef.kind }}
+  {{- else }}
+  # Provide either serverCert.certManager.clusterIssuer or serverCert.certManager.issuerRef
+  {{- end }}
+  commonName: {{ .Values.serverCert.certManager.commonName | quote }}
+  dnsNames:
+    {{- range .Values.serverCert.certManager.dnsNames }}
+    - {{ . | quote }}
+    {{- end }}
+{{- end }}

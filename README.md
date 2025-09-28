@@ -111,6 +111,56 @@ traefikTcp:
 
 Note: Service type can remain `ClusterIP` when using Ingress.
 
+## Server Certificate Override
+
+By default, Nessus generates and uses a self-signed certificate. Optionally, you can provide a custom server certificate that Nessus will import and use instead.
+
+When enabled, the chart mounts a Kubernetes Secret at `/tls` and runs `nessuscli import-certs` during container startup to import the certificate into Nessus. If the Secret is not present or missing keys, the import is skipped and Nessus continues with its self-signed certificate.
+
+### Option 1: Default (Self-Signed Certificate)
+No configuration needed. Nessus uses its built-in self-signed certificate.
+```yaml
+serverCert:
+  enabled: false  # default
+```
+
+### Option 2: Pre-Existing Secret
+Provide a Secret containing `tls.key` and `tls.crt` keys. The chart will mount and import it.
+```yaml
+serverCert:
+  enabled: true
+  secretName: my-nessus-cert  # name of your existing Secret
+```
+
+Create the Secret manually:
+```bash
+kubectl -n nessus create secret tls my-nessus-cert \
+  --key=server.key \
+  --cert=server.crt
+```
+
+### Option 3: cert-manager Managed Certificate
+Let cert-manager mint and renew the certificate automatically.
+```yaml
+serverCert:
+  enabled: true
+  secretName: nessus-cert-managed  # cert-manager will create this Secret
+  certManager:
+    enabled: true
+    clusterIssuer: letsencrypt-prod  # or use issuerRef below
+    # issuerRef:
+    #   name: my-issuer
+    #   kind: Issuer
+    commonName: nessus.example.com
+    dnsNames:
+      - nessus.example.com
+```
+
+**Requirements:**
+- cert-manager must be installed in the cluster
+- A ClusterIssuer or Issuer must exist (e.g., `letsencrypt-prod`)
+- DNS must be configured for certificate validation
+
 ---
 # Nessus-Kubernetes-ArgoCD
 These Kubernetes manifests are used to deploy the nessus Docker image onto a Kubernetes server.

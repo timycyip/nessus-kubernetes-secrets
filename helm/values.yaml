@@ -78,4 +78,17 @@ traefikTcp:
   entryPoint: websecure
   hostSNI: nessus.example.com
   servicePort: 8834
-  
+
+# Optional server certificate override (default: Nessus uses self-signed cert)
+serverCert:
+  enabled: false
+  secretName: nessus-tls
+  certManager:
+    enabled: false
+    clusterIssuer: ""
+    issuerRef:
+      name: ""
+      kind: ""
+    commonName: nessus.example.com
+    dnsNames:
+      - nessus.example.com
