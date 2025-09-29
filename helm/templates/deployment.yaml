@@ -53,41 +53,55 @@ spec:
                   - /bin/sh
                   - -c
                   - |
-                    OUT="/proc/1/fd/1"; ERR="/proc/1/fd/2"
-                    echo "[postStart] Checking for server certificate material..." >"$OUT"
+                    echo "[postStart] Checking for server certificate material..."
                     KEY="/tls/tls.key"; CRT="/tls/tls.crt"; CACFG="/tls/ca.crt"
                     LEAF="/tmp/server-leaf.crt"; CHAIN="/tmp/ca-chain.crt"
                     if [ -f "$KEY" ] && [ -f "$CRT" ]; then
-                      echo "[postStart] tls.key and tls.crt found" >"$OUT"
+                      echo "[postStart] tls.key and tls.crt found"
                       # Split tls.crt into individual certs (cert1=leaf, cert2+=chain)
                       awk 'BEGIN{c=0} /-----BEGIN CERTIFICATE-----/{c++} {print > ("/tmp/cert" c ".pem")}' "$CRT" || true
                       if [ -s /tmp/cert1.pem ]; then
-                        cp /tmp/cert1.pem "$LEAF" || cp "$CRT" "$LEAF"
+                        cp -f /tmp/cert1.pem "$LEAF" || cp -f "$CRT" "$LEAF"
                       else
-                        cp "$CRT" "$LEAF" || true
+                        cp -f "$CRT" "$LEAF" || true
                       fi
-                      # Build chain from remaining certs, or use ca.crt if provided
+
+                      # Build chain from remaining certs (exclude leaf), or use ca.crt if provided
+                      : > "$CHAIN"
                       if [ -f "$CACFG" ]; then
-                        echo "[postStart] Using provided /tls/ca.crt as CA chain" >"$OUT"
-                        cp "$CACFG" "$CHAIN" || true
+                        echo "[postStart] Using provided /tls/ca.crt as CA chain"
+                        cp -f "$CACFG" "$CHAIN" || true
                       else
-                        : > "$CHAIN"
                         i=2
                         while [ -f "/tmp/cert${i}.pem" ]; do
                           cat "/tmp/cert${i}.pem" >> "$CHAIN" || true
                           i=$((i+1))
                         done
-                        [ ! -s "$CHAIN" ] && cp "$CRT" "$CHAIN" || true
                       fi
-                      if [ -x /opt/nessus/sbin/nessuscli ]; then
-                        echo "[postStart] Importing with nessuscli (leaf=$LEAF, chain=$CHAIN)" >"$OUT"
-                        /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$LEAF" --cacert="$CHAIN" >>"$OUT" 2>>"$ERR" || true
-                        echo "[postStart] Import attempted" >"$OUT"
+
+                      # Verify leaf against CA chain if we have one
+                      if [ -s "$CHAIN" ]; then
+                        echo "[postStart] Verifying leaf against CA chain..."
+                        if command -v openssl >/dev/null 2>&1; then
+                          openssl verify -CAfile "$CHAIN" "$LEAF" || {
+                            echo "[postStart] OpenSSL verify failed; skipping import to avoid mismatch"
+                            exit 0
+                          }
+                        else
+                          echo "[postStart] openssl not available; proceeding without pre-verify"
+                        fi
+                        if [ -x /opt/nessus/sbin/nessuscli ]; then
+                          echo "[postStart] Importing with nessuscli (leaf=$LEAF, chain=$CHAIN)"
+                          /opt/nessus/sbin/nessuscli import-certs --serverkey="$KEY" --servercert="$LEAF" --cacert="$CHAIN" || true
+                          echo "[postStart] Import attempted"
+                        else
+                          echo "[postStart] nessuscli not executable yet; skipping import"
+                        fi
                       else
-                        echo "[postStart] nessuscli not executable yet; skipping import" >"$OUT"
+                        echo "[postStart] No CA chain available (no intermediates and no ca.crt); skipping import"
                       fi
                     else
-                      echo "[postStart] TLS files not present; skipping import" >"$OUT"
+                      echo "[postStart] TLS files not present; skipping import"
                     fi
                     true
           {{- end }}
