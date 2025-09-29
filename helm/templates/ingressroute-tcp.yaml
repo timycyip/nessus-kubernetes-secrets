@@ -1,0 +1,22 @@
+{{- if .Values.traefikTcp.enabled }}
+{{- if .Capabilities.APIVersions.Has "traefik.io/v1alpha1" }}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: {{ include "nessus-secrets.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "nessus-secrets.labels" . | nindent 4 }}
+spec:
+  entryPoints:
+    - {{ .Values.traefikTcp.entryPoint | default "websecure" | quote }}
+  tls:
+    passthrough: true
+  routes:
+    - match: HostSNI(`{{ .Values.traefikTcp.hostSNI }}`)
+      services:
+        - name: {{ include "nessus-secrets.fullname" . }}
+          namespace: {{ .Release.Namespace }}
+          port: {{ .Values.traefikTcp.servicePort | default .Values.service.port }}
+{{- end }}
+{{- end }}

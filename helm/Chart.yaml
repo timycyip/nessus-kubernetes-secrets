@@ -1,6 +1,17 @@
 apiVersion: v2
-name: nessus
-description: A simple helm chart for deploying nessus in kubernetes
+name: nessus-secrets
+description: Nessus vulnerability scanner with Secrets and Ingress integration
 type: application
-version: 0.2.0
+version: 0.1.5
 appVersion: "latest"
+keywords:
+  - nessus
+  - vulnerability
+  - scanner
+  - security
+home: https://www.tenable.com/products/nessus
+sources:
+  - https://github.com/timycyip/nessus-kubernetes-secrets
+maintainers:
+  - name: timycyip
+    email: mail@timyip.work
