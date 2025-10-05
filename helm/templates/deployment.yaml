@@ -46,6 +46,11 @@ spec:
             - name: nessus-server-cert
               mountPath: "/tls"
               readOnly: true
+            {{- if .Values.caCert.enabled }}
+            - name: nessus-ca-cert
+              mountPath: "/tls-ca"
+              readOnly: true
+            {{- end }}
           lifecycle:
             postStart:
               exec:
@@ -55,6 +60,9 @@ spec:
                   - |
                     echo "[postStart] Checking for server certificate material..."
                     KEY="/tls/tls.key"; CRT="/tls/tls.crt"; CACFG="/tls/ca.crt"
+                    {{- if .Values.caCert.enabled }}
+                    CAOVERRIDE="/tls-ca/{{ .Values.caCert.key }}"
+                    {{- end }}
                     LEAF="/tmp/server-leaf.crt"; CHAIN="/tmp/ca-chain.crt"
                     if [ -f "$KEY" ] && [ -f "$CRT" ]; then
                       echo "[postStart] tls.key and tls.crt found"
@@ -66,12 +74,22 @@ spec:
                         cp -f "$CRT" "$LEAF" || true
                       fi
 
-                      # Build chain from remaining certs (exclude leaf), or use ca.crt if provided
+                      # Build chain from CA sources (priority: override > bundled ca.crt > intermediates in tls.crt)
                       : > "$CHAIN"
+                      {{- if .Values.caCert.enabled }}
+                      if [ -f "$CAOVERRIDE" ]; then
+                        echo "[postStart] Using CA override from {{ .Values.caCert.source }}/{{ .Values.caCert.name }}"
+                        cp -f "$CAOVERRIDE" "$CHAIN" || true
+                      elif [ -f "$CACFG" ]; then
+                        echo "[postStart] Using provided /tls/ca.crt as CA chain"
+                        cp -f "$CACFG" "$CHAIN" || true
+                      else
+                      {{- else }}
                       if [ -f "$CACFG" ]; then
                         echo "[postStart] Using provided /tls/ca.crt as CA chain"
                         cp -f "$CACFG" "$CHAIN" || true
                       else
+                      {{- end }}
                         i=2
                         while [ -f "/tmp/cert${i}.pem" ]; do
                           cat "/tmp/cert${i}.pem" >> "$CHAIN" || true
@@ -111,4 +129,16 @@ spec:
           secret:
             secretName: {{ .Values.serverCert.secretName }}
             optional: true
+        {{- if .Values.caCert.enabled }}
+        - name: nessus-ca-cert
+          {{- if eq .Values.caCert.source "secret" }}
+          secret:
+            secretName: {{ .Values.caCert.name }}
+            optional: true
+          {{- else if eq .Values.caCert.source "configmap" }}
+          configMap:
+            name: {{ .Values.caCert.name }}
+            optional: true
+          {{- end }}
+        {{- end }}
       {{- end }}

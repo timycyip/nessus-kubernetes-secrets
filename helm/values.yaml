@@ -92,3 +92,14 @@ serverCert:
     commonName: nessus.example.com
     dnsNames:
       - nessus.example.com
+
+# Optional CA certificate configuration
+# If defined, this will override any CA cert included in serverCert
+caCert:
+  enabled: false
+  # Source can be 'secret' or 'configmap'
+  source: secret
+  # Name of the secret or configmap containing the CA cert
+  name: nessus-ca
+  # Key within the secret/configmap that contains the CA cert data
+  key: ca.crt
