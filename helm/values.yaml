@@ -14,6 +14,14 @@ resources: {}
   #   cpu: 100m
   #   memory: 128Mi
 
+# Persistence configuration
+persistence:
+  enabled: false
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  annotations: {}
+
 # Secret containing credentials referenced by the Deployment.
 # Must include keys: activation_code, username, password
 secretName: nessus-credentials

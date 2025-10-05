@@ -41,11 +41,21 @@ spec:
                   name: {{ .Values.secretName }}
                   key: password
                   optional: true
-          {{- if .Values.serverCert.enabled }}
           volumeMounts:
+          {{- if .Values.persistence.enabled }}
+            - name: nessus-data
+              mountPath: /opt/nessus/var/nessus
+              subPath: var
+            - name: nessus-data
+              mountPath: /opt/nessus/etc/nessus
+              subPath: etc
+          {{- end }}
+          {{- if .Values.serverCert.enabled }}
             - name: nessus-server-cert
               mountPath: "/tls"
               readOnly: true
+          {{- end }}
+          {{- if .Values.serverCert.enabled }}
           lifecycle:
             preStart:
               exec:
@@ -62,8 +72,13 @@ spec:
                       echo "TLS files not present at $KEY / $CRT, skipping import"
                     fi
           {{- end }}
-      {{- if .Values.serverCert.enabled }}
       volumes:
+      {{- if .Values.persistence.enabled }}
+        - name: nessus-data
+          persistentVolumeClaim:
+            claimName: {{ include "nessus-secrets.fullname" . }}
+      {{- end }}
+      {{- if .Values.serverCert.enabled }}
         - name: nessus-server-cert
           secret:
             secretName: {{ .Values.serverCert.secretName }}
